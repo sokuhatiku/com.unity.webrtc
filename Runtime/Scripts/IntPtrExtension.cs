@@ -25,15 +25,17 @@ namespace Unity.WebRTC
             return Marshal.PtrToStringAnsi(ptr);
         }
 
-        public static void ToArray<T>(this IntPtr ptr, T[] array)
+        public static T[] ToArray<T>(this IntPtr ptr, int length)
         {
+            T[] array = new T[length];
             IntPtr iter = ptr;
             int size = Marshal.SizeOf(typeof(T));
-            for (int i = 0; i < array.Length; i++)
+            for (int i = 0; i < length; i++)
             {
                 array[i] = (T)Marshal.PtrToStructure(iter, typeof(T));
                 iter = IntPtr.Add(iter, size);
             }
+            return array;
         }
 
         public static IntPtr ToPtr<T>(T[] array)
