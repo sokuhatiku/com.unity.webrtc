@@ -196,6 +196,51 @@ namespace Unity.WebRTC.RuntimeTest
             Object.DestroyImmediate(camObj);
         }
 
+        /// <todo>
+        /// This unittest failed standalone mono 2019.3 on linux
+        /// </todo>
+        [UnityTest]
+        [Timeout(5000)]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.LinuxPlayer })]
+        public IEnumerator SenderParameters()
+        {
+            var camObj = new GameObject("Camera");
+            var cam = camObj.AddComponent<Camera>();
+            var videoStream = cam.CaptureStream(1280, 720, 1000000);
+            yield return new WaitForSeconds(0.1f);
+
+            var test = new MonoBehaviourTest<SignalingPeersTest>();
+            test.component.SetStream(videoStream);
+            yield return test;
+            test.component.CoroutineWebRTCUpdate();
+            yield return 0;
+
+            var senders = test.component.GetPeer1Senders();
+            Assert.IsNotEmpty(senders);
+
+            foreach(var sender in senders)
+            {
+                var parameters = sender.GetParameters();
+                Assert.IsNotEmpty(parameters.Encodings);
+                const uint framerate = 30;
+                const uint bitrate = 2000000;
+                const double scaleResolutionDownBy = 2.0;
+                parameters.Encodings[0].maxFramerate = framerate;
+                parameters.Encodings[0].maxBitrate = bitrate;
+                parameters.Encodings[0].scaleResolutionDownBy = scaleResolutionDownBy;
+                RTCErrorType error = sender.SetParameters(parameters);
+                Assert.AreEqual(RTCErrorType.None, error);
+                var parameters2 = sender.GetParameters();
+                Assert.AreEqual(framerate, parameters2.Encodings[0].maxFramerate);
+                Assert.AreEqual(bitrate, parameters2.Encodings[0].maxBitrate);
+                Assert.AreEqual(scaleResolutionDownBy, parameters2.Encodings[0].scaleResolutionDownBy);
+            }
+
+            test.component.Dispose();
+            videoStream.Dispose();
+            Object.DestroyImmediate(camObj);
+        }
+
         public class SignalingPeersTest : MonoBehaviour, IMonoBehaviourTest
         {
             private bool m_isFinished;
@@ -298,6 +343,11 @@ namespace Unity.WebRTC.RuntimeTest
             public Coroutine CoroutineWebRTCUpdate()
             {
                 return StartCoroutine(WebRTC.Update());
+            }
+
+            public IEnumerable<RTCRtpSender> GetPeer1Senders()
+            {
+                return pc1Senders;
             }
 
             public void Dispose()

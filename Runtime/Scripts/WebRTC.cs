@@ -25,12 +25,15 @@ namespace Unity.WebRTC
 
     public struct RTCDataChannelInit
     {
+        [MarshalAs(UnmanagedType.U1)]
         public bool reliable;
+        [MarshalAs(UnmanagedType.U1)]
         public bool ordered;
         public int maxRetransmitTime;
         public int maxRetransmits;
         [MarshalAs(UnmanagedType.LPStr)]
         public string protocol;
+        [MarshalAs(UnmanagedType.U1)]
         public bool negotiated;
         public int id;
 
@@ -60,6 +63,33 @@ namespace Unity.WebRTC
         internal RTCRtpSender(IntPtr ptr)
         {
             self = ptr;
+        }
+
+        public MediaStreamTrack Track
+        {
+            get
+            {
+                IntPtr ptr = NativeMethods.SenderGetTrack(self);
+                return WebRTC.FindOrCreate<MediaStreamTrack>(ptr, _ptr => new MediaStreamTrack(_ptr));
+            }
+        }
+
+        public RTCRtpSendParameters GetParameters()
+        {
+            NativeMethods.SenderGetParameters(self, out var ptr);
+            RTCRtpSendParametersInternal parametersInternal = Marshal.PtrToStructure<RTCRtpSendParametersInternal>(ptr);
+            RTCRtpSendParameters parameters = new RTCRtpSendParameters(parametersInternal);
+            Marshal.FreeHGlobal(ptr);
+            return parameters;
+        }
+
+        public RTCErrorType SetParameters(RTCRtpSendParameters parameters)
+        {
+            IntPtr ptr = parameters.CreatePtr();
+            RTCErrorType error = NativeMethods.SenderSetParameters(self, ptr);
+            RTCRtpSendParameters.DeletePtr(ptr);
+
+            return error;
         }
     }
 
@@ -159,13 +189,17 @@ namespace Unity.WebRTC
 
     public struct RTCOfferOptions
     {
+        [MarshalAs(UnmanagedType.U1)]
         public bool iceRestart;
+        [MarshalAs(UnmanagedType.U1)]
         public bool offerToReceiveAudio;
+        [MarshalAs(UnmanagedType.U1)]
         public bool offerToReceiveVideo;
     }
 
     public struct RTCAnswerOptions
     {
+        [MarshalAs(UnmanagedType.U1)]
         public bool iceRestart;
     }
 
@@ -565,6 +599,12 @@ namespace Unity.WebRTC
         [DllImport(WebRTC.Lib)]
         public static extern IntPtr TransceiverGetSender(IntPtr transceiver);
         [DllImport(WebRTC.Lib)]
+        public static extern IntPtr SenderGetTrack(IntPtr sender);
+        [DllImport(WebRTC.Lib)]
+        public static extern void SenderGetParameters(IntPtr sender, out IntPtr parameters);
+        [DllImport(WebRTC.Lib)]
+        public static extern RTCErrorType SenderSetParameters(IntPtr sender, IntPtr parameters);
+        [DllImport(WebRTC.Lib)]
         public static extern int DataChannelGetID(IntPtr ptr);
         [DllImport(WebRTC.Lib)]
         public static extern IntPtr DataChannelGetLabel(IntPtr ptr);
@@ -612,7 +652,7 @@ namespace Unity.WebRTC
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool MediaStreamTrackGetEnabled(IntPtr track);
         [DllImport(WebRTC.Lib)]
-        public static extern void MediaStreamTrackSetEnabled(IntPtr track, bool enabled);
+        public static extern void MediaStreamTrackSetEnabled(IntPtr track, [MarshalAs(UnmanagedType.U1)] bool enabled);
         [DllImport(WebRTC.Lib)]
         public static extern void SetCurrentContext(IntPtr context);
         [DllImport(WebRTC.Lib)]
