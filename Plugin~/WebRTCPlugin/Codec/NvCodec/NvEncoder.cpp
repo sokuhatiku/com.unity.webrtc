@@ -92,7 +92,7 @@ namespace webrtc
         nvEncConfig.encodeCodecConfig.h264Config.sliceModeData = 0;
         nvEncConfig.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
         //Quality Control
-        nvEncConfig.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_51;
+        nvEncConfig.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_52;
 #pragma endregion
 #pragma region get encoder capability
         NV_ENC_CAPS_PARAM capsParam = { 0 };
