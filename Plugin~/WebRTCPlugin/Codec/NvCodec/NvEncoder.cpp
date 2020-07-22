@@ -228,7 +228,10 @@ namespace webrtc
             std::memcpy(&nvEncReconfigureParams.reInitEncodeParams, &nvEncInitializeParams, sizeof(nvEncInitializeParams));
             nvEncReconfigureParams.version = NV_ENC_RECONFIGURE_PARAMS_VER;
             errorCode = pNvEncodeAPI->nvEncReconfigureEncoder(pEncoderInterface, &nvEncReconfigureParams);
-            checkf(NV_RESULT(errorCode), StringFormat("Failed to reconfigure encoder setting %d", errorCode).c_str());
+            if (errorCode != NV_ENC_ERR_INVALID_PARAM)
+            {
+                checkf(NV_RESULT(errorCode), StringFormat("Failed to reconfigure encoder setting %d", errorCode).c_str());
+            }
         }
     }
     void NvEncoder::SetRates(const webrtc::VideoEncoder::RateControlParameters& parameters)
